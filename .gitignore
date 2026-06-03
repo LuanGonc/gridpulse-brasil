@@ -1,0 +1,22 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+data/
+.aws/
+
+# Sistema operacional / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Python
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Athena / outputs locais
+*.csv
+*.parquet
+*.jsonl
