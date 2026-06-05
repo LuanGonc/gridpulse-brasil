@@ -23,15 +23,11 @@ SILVER_BASE_PATH = Path("data", "silver", "inmet", "observacoes_horarias")
 
 TARGET_YEAR = 2025
 
-TARGET_UFS_SECO = {
-    "RJ",
-    "SP",
-    "MG",
-    "ES",
-    "GO",
-    "MT",
-    "MS",
-    "DF",
+TARGET_UFS = {
+    "RJ", "SP", "MG", "ES", "GO", "MT", "MS", "DF",
+    "PR", "SC", "RS",
+    "BA", "SE", "AL", "PE", "PB", "RN", "CE", "PI", "MA",
+    "AM", "RR", "AP", "PA", "TO", "RO", "AC",
 }
 
 
@@ -278,7 +274,7 @@ def read_single_inmet_file(file_path: Path) -> pd.DataFrame | None:
 
     uf = metadata["uf"]
 
-    if uf not in TARGET_UFS_SECO:
+    if uf not in TARGET_UFS:
         return None
 
     df = pd.read_csv(
@@ -443,7 +439,7 @@ def main() -> None:
 
     print("Iniciando transformação INMET Bronze -> Silver...")
     print(f"Ano alvo: {TARGET_YEAR}")
-    print(f"UFs alvo: {sorted(TARGET_UFS_SECO)}")
+    print(f"UFs alvo: {sorted(TARGET_UFS)}")
 
     extracted_dir = find_latest_extracted_dir(TARGET_YEAR)
     print(f"Pasta extracted usada: {extracted_dir}")
