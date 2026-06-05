@@ -20,3 +20,5 @@ Thumbs.db
 *.csv
 *.parquet
 *.jsonl
+dashboard_cache/
+.streamlit/secrets.toml
