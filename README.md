@@ -2,19 +2,151 @@
 
 Lakehouse serverless na AWS para análise da relação entre demanda elétrica, clima e risco de pico de carga no Brasil.
 
+## Visão geral
+
+O **GridPulse Brasil** é um projeto de Engenharia de Dados que integra dados públicos do **ONS** e do **INMET** em uma arquitetura **Medallion** na AWS.
+
+O projeto constrói um pipeline completo para:
+
+- ingerir dados públicos de energia e clima;
+- armazenar dados crus na camada Bronze;
+- transformar dados brutos em tabelas limpas na camada Silver;
+- materializar tabelas analíticas na camada Gold;
+- catalogar dados com AWS Glue Data Catalog;
+- consultar dados com Amazon Athena;
+- calcular um score de risco de pico de demanda;
+- visualizar os resultados em um dashboard Streamlit.
+
+---
+
 ## Problema
 
-A demanda elétrica pode variar conforme fatores climáticos, especialmente temperatura. O objetivo deste projeto é construir uma plataforma de dados capaz de integrar dados públicos de energia e clima, gerar camadas analíticas e identificar dias críticos de demanda.
+A demanda elétrica pode variar conforme fatores climáticos, especialmente temperatura. Em dias mais quentes, o uso de refrigeração tende a aumentar, pressionando a carga elétrica.
+
+Este projeto investiga essa relação combinando:
+
+- carga elétrica verificada por área de carga;
+- observações climáticas horárias;
+- agregações diárias;
+- análise de correlação;
+- score de risco baseado em percentis de carga e temperatura.
+
+---
 
 ## Objetivo
 
-Construir um pipeline de engenharia de dados usando AWS, arquitetura Medallion e dados públicos para analisar a relação entre carga elétrica e variáveis climáticas.
+Construir um **lakehouse serverless na AWS** para análise da relação entre clima e demanda elétrica no Brasil, usando dados públicos e boas práticas de Engenharia de Dados.
 
-## Stack
+O projeto demonstra:
+
+- arquitetura Medallion;
+- ETL/ELT com Python e SQL;
+- particionamento de dados;
+- uso de Parquet;
+- catálogo de dados com AWS Glue;
+- consultas serverless com Athena;
+- modelagem de tabelas Gold;
+- dashboard analítico;
+- controle de custos em ambiente cloud.
+
+---
+
+## Arquitetura
+
+```mermaid
+flowchart TD
+    A[ONS API - Carga Verificada] --> B[S3 Bronze - JSON bruto]
+    C[INMET Dados Históricos - ZIP/CSV] --> D[S3 Bronze - Dados brutos]
+
+    B --> E[Python ETL - ONS]
+    D --> F[Python ETL - INMET]
+
+    E --> G[S3 Silver - ONS Parquet]
+    F --> H[S3 Silver - INMET Parquet]
+
+    G --> I[AWS Glue Data Catalog]
+    H --> I
+
+    I --> J[Amazon Athena]
+
+    J --> K[S3 Gold - Demanda Diária]
+    J --> L[S3 Gold - Clima Diário]
+
+    K --> M[S3 Gold - Demanda + Clima]
+    L --> M
+
+    M --> N[S3 Gold - Dias Críticos / Risk Score]
+    N --> O[Streamlit Dashboard]
+```
+
+---
+
+## Arquitetura Medallion
+
+O projeto utiliza arquitetura **Medallion**, separando os dados em três camadas principais:
+
+```text
+Bronze -> Silver -> Gold
+```
+
+### Bronze
+
+A camada Bronze armazena os dados crus, preservando o formato original da fonte.
+
+Exemplos:
+
+- ONS: JSON retornado pela API de carga verificada.
+- INMET: ZIP/CSV histórico das estações automáticas.
+
+Objetivos da Bronze:
+
+- preservar rastreabilidade;
+- manter uma cópia fiel da fonte;
+- evitar perda precoce de informação;
+- permitir reprocessamento futuro;
+- manter histórico de ingestões.
+
+---
+
+### Silver
+
+A camada Silver contém dados limpos, padronizados, tipados e deduplicados.
+
+Transformações aplicadas:
+
+- padronização de nomes de colunas;
+- conversão de datas e timestamps;
+- conversão de valores numéricos;
+- tratamento de vírgula decimal em dados do INMET;
+- remoção de duplicatas;
+- validação de colunas críticas;
+- enriquecimento com metadados;
+- particionamento por área, UF, ano e mês;
+- gravação em Parquet.
+
+---
+
+### Gold
+
+A camada Gold contém tabelas analíticas prontas para consumo por SQL, BI e dashboard.
+
+Tabelas Gold criadas:
+
+| Tabela | Descrição |
+|---|---|
+| `demanda_diaria_area` | Demanda elétrica agregada por área de carga e dia |
+| `clima_diario_area` | Dados climáticos agregados por área de carga e dia |
+| `demanda_clima_diaria` | Integração entre demanda elétrica e clima |
+| `dias_criticos_demanda_clima` | Score de risco diário de pico de demanda |
+
+---
+
+## Stack utilizada
 
 - Python
 - Pandas
 - Boto3
+- PyArrow
 - AWS S3
 - AWS Glue Data Catalog
 - AWS Glue Crawler
@@ -22,70 +154,147 @@ Construir um pipeline de engenharia de dados usando AWS, arquitetura Medallion e
 - Parquet
 - Streamlit
 - Plotly
+- Git/GitHub
 
-## Arquitetura
+---
+
+## Infraestrutura AWS
+
+| Serviço | Papel no projeto |
+|---|---|
+| Amazon S3 | Armazenamento das camadas Bronze, Silver e Gold |
+| AWS Glue Data Catalog | Catálogo de metadados das tabelas |
+| AWS Glue Crawler | Descoberta automática de schemas e partições |
+| Amazon Athena | Consulta SQL serverless sobre dados no S3 |
+| IAM | Controle de permissões para ingestão, consulta e dashboard |
+
+---
+
+## ETL / ELT
+
+O pipeline combina práticas de **ETL** e **ELT**.
+
+### Extract
+
+Extração dos dados das fontes públicas:
+
+- API do ONS;
+- arquivos históricos do INMET.
+
+### Load
+
+Carregamento dos dados crus na camada Bronze do S3.
+
+### Transform
+
+Transformações em duas etapas:
+
+1. Python transforma Bronze em Silver.
+2. Athena SQL transforma Silver em Gold.
+
+Fluxo principal:
 
 ```text
-ONS API + INMET Historical Data
-        ↓
-S3 Bronze
-        ↓
-Python Transformations
-        ↓
-S3 Silver - Parquet
-        ↓
-Glue Data Catalog
-        ↓
-Athena
-        ↓
-S3 Gold
-        ↓
-Streamlit Dashboard
+Extract:
+    ONS API
+    INMET historical files
+
+Load:
+    S3 Bronze
+
+Transform:
+    Bronze -> Silver with Python
+    Silver -> Gold with Athena SQL
+
+Serve:
+    Streamlit dashboard
 ```
 
+---
 
-## Camadas Medallion
- **Bronze**
+## Dashboard
 
-Dados crus preservados no formato original:
+O dashboard em Streamlit permite visualizar:
 
-*ONS:* JSON da API de carga verificada
-*INMET:* ZIP/CSV histórico das estações automáticas
+- filtros por área de carga;
+- filtros por mês;
+- filtros por nível de risco;
+- KPIs de dias analisados;
+- risco médio;
+- maior risco;
+- correlação entre carga e temperatura;
+- série temporal de carga média x temperatura média;
+- distribuição dos níveis de risco;
+- resumo mensal;
+- ranking dos dias mais críticos.
 
-**Silver**
+---
 
-Dados limpos, tipados, deduplicados e particionados em Parquet.
+## Áreas analisadas
 
-**Gold**
+O projeto analisa as quatro áreas de carga:
 
-Tabelas analíticas:
+| Área | Descrição |
+|---|---|
+| `SECO` | Sudeste/Centro-Oeste |
+| `S` | Sul |
+| `NE` | Nordeste |
+| `N` | Norte |
 
-- demanda_diaria_area
-- clima_diario_area
-- demanda_clima_diaria
-- dias_criticos_demanda_clima
-- Principais resultados
-- 365 dias analisados em 2025
-- Correlação positiva entre carga elétrica média e temperatura média
-- Score de risco diário combinando demanda elétrica e clima
-- Identificação de dias críticos com risco alto de pico de demanda
-- Dashboard
+O mapeamento entre estações climáticas do INMET e áreas de carga do ONS é feito por UF, como aproximação analítica regional.
 
-O dashboard permite visualizar:
+---
 
-- Série temporal de carga e temperatura
-- Distribuição dos níveis de risco
-- Resumo mensal do risco
-- Ranking dos dias mais críticos
-- Correlação entre demanda elétrica e temperatura
+## Score de risco
+
+A tabela `dias_criticos_demanda_clima` calcula um score de risco diário entre 0 e 100.
+
+O score considera:
+
+- carga média acima do percentil 95 da área;
+- carga máxima acima do percentil 95 da área;
+- temperatura média acima do percentil 90 da área;
+- temperatura máxima acima do percentil 90 da área;
+- amplitude de carga acima do percentil 90 da área;
+- combinação de pico de carga com temperatura elevada.
+
+### Classificação
+
+| Score | Nível |
+|---:|---|
+| 0 a 39 | BAIXO |
+| 40 a 69 | MEDIO |
+| 70 a 100 | ALTO |
+
+O score é calculado individualmente por área de carga. Assim, um dia de risco alto representa um dia extremo em relação ao histórico daquela própria área.
+
+---
 
 ## Como executar localmente
+
+### 1. Criar ambiente virtual
+
+```bash
+python -m venv .venv
+```
+
+### 2. Ativar ambiente virtual no Windows
+
+```bash
+.venv\Scripts\activate
+```
+
+### 3. Instalar dependências
+
+```bash
 pip install -r requirements.txt
-streamlit run dashboard/app.py
+```
 
-Configure o arquivo .env com:
+### 4. Configurar `.env`
 
-```text
+Crie um arquivo `.env` baseado em `.env.example`:
+
+```env
 AWS_PROFILE=gridpulse-dev
 AWS_REGION=us-east-1
 S3_BUCKET=your-bucket-name
@@ -93,9 +302,55 @@ ATHENA_DATABASE=gridpulse_gold
 ATHENA_OUTPUT_LOCATION=s3://your-bucket-name/athena-results/
 ```
 
-A ordem para rodar no Athena é:
+### 5. Executar dashboard
 
-1. create_demanda_diaria_area.sql
-2. create_clima_diario_area.sql
-3. create_demanda_clima_diaria.sql
-4. create_dias_criticos_demanda_clima.sql
+```bash
+streamlit run dashboard/app.py
+```
+
+---
+
+## Estrutura do projeto
+
+```text
+gridpulse-brasil/
+├── dashboard/
+│   └── app.py
+├── docs/
+│   ├── architecture.md
+│   ├── etl_pipeline.md
+│   ├── data_dictionary.md
+│   ├── cost_control.md
+│   └── analytics_methodology.md
+├── sql/
+│   ├── gold/
+│   └── validation/
+├── src/
+│   ├── ingestion/
+│   └── transformation/
+├── .env.example
+├── .gitignore
+├── README.md
+└── requirements.txt
+```
+
+---
+
+## Limitações
+
+- O mapeamento entre estações climáticas e áreas de carga é feito por UF, como aproximação regional.
+- O score de risco é baseado em regras estatísticas explicáveis, não em modelo supervisionado.
+- A análise de correlação é exploratória e não implica causalidade.
+- O dashboard local depende de credenciais AWS configuradas no ambiente.
+- A infraestrutura ainda não está provisionada com Terraform.
+
+---
+
+## Próximos passos
+
+- Criar infraestrutura como código com Terraform.
+- Adicionar testes automatizados de qualidade dos dados.
+- Criar pipeline orquestrado.
+- Melhorar o dashboard com insights automáticos.
+- Adicionar análise multi-ano.
+- Criar versão pública demonstrativa com dados amostrados.
