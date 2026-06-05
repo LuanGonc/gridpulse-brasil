@@ -258,6 +258,23 @@ O score considera:
 - amplitude de carga acima do percentil 90 da área;
 - combinação de pico de carga com temperatura elevada.
 
+## Principais resultados
+
+A análise foi executada para as quatro áreas de carga do sistema elétrico brasileiro em 2025.
+
+| Área | Dias analisados | Risco médio | Maior risco | Dias de risco alto | Correlação carga x temperatura | Carga média (MWmed) | Temperatura média (°C) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| N | 365 | 6.85 | 100 | 8 | 0.724 | 8269.87 | 26.53 |
+| NE | 365 | 6.99 | 100 | 6 | 0.618 | 13480.96 | 26.17 |
+| S | 365 | 6.97 | 100 | 12 | 0.516 | 13959.64 | 18.68 |
+| SECO | 365 | 6.86 | 100 | 2 | 0.665 | 45048.53 | 22.86 |
+
+### Interpretação
+
+O score de risco foi calculado separadamente por área de carga, usando percentis internos de cada região. Por isso, um dia classificado como risco alto representa um comportamento extremo em relação ao histórico da própria área, e não necessariamente a maior carga absoluta do país.
+
+A correlação entre carga e temperatura é uma métrica exploratória. Ela indica associação linear entre as variáveis, mas não deve ser interpretada como causalidade direta.
+
 ### Classificação
 
 | Score | Nível |
@@ -354,3 +371,25 @@ gridpulse-brasil/
 - Melhorar o dashboard com insights automáticos.
 - Adicionar análise multi-ano.
 - Criar versão pública demonstrativa com dados amostrados.
+
+## Screenshots
+
+### Dashboard principal
+
+![Dashboard principal](docs/images/dashboard_overview.png)
+
+### Distribuição dos níveis de risco
+
+![Distribuição de risco](docs/images/dashboard_risk_distribution.png)
+
+### Top dias críticos
+
+![Top dias críticos](docs/images/dashboard_top_critical_days.png)
+
+### Camadas Medallion no S3
+
+![Camadas no S3](docs/images/s3_medallion_layers.png)
+
+### Consulta das tabelas Gold no Athena
+
+![Athena Gold Tables](docs/images/athena_gold_tables.png)
