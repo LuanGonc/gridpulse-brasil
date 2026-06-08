@@ -22,3 +22,4 @@ Thumbs.db
 *.jsonl
 dashboard_cache/
 .streamlit/secrets.toml
+sql/generated/

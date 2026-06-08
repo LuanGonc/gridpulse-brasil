@@ -1,8 +1,8 @@
-CREATE TABLE gridpulse_gold.demanda_diaria_area
+﻿CREATE TABLE gridpulse_gold.demanda_diaria_area
 WITH (
     format = 'PARQUET',
     parquet_compression = 'SNAPPY',
-    external_location = 's3://gridpulse-brasil-luan-dev/gold/energy_demand/demanda_diaria_area/',
+    external_location = 's3://{{S3_BUCKET}}/gold/energy_demand/demanda_diaria_area/',
     partitioned_by = ARRAY['ano', 'mes']
 ) AS
 WITH base AS (

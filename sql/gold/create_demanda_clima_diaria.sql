@@ -1,8 +1,8 @@
-CREATE TABLE gridpulse_gold.demanda_clima_diaria
+﻿CREATE TABLE gridpulse_gold.demanda_clima_diaria
 WITH (
     format = 'PARQUET',
     parquet_compression = 'SNAPPY',
-    external_location = 's3://gridpulse-brasil-luan-dev/gold/analytics/demanda_clima_diaria/',
+    external_location = 's3://{{S3_BUCKET}}/gold/analytics/demanda_clima_diaria/',
     partitioned_by = ARRAY['ano', 'mes']
 ) AS
 SELECT

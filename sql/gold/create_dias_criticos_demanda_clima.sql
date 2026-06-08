@@ -1,8 +1,8 @@
-CREATE TABLE gridpulse_gold.dias_criticos_demanda_clima
+﻿CREATE TABLE gridpulse_gold.dias_criticos_demanda_clima
 WITH (
     format = 'PARQUET',
     parquet_compression = 'SNAPPY',
-    external_location = 's3://gridpulse-brasil-luan-dev/gold/analytics/dias_criticos_demanda_clima/',
+    external_location = 's3://{{S3_BUCKET}}/gold/analytics/dias_criticos_demanda_clima/',
     partitioned_by = ARRAY['ano', 'mes']
 ) AS
 WITH thresholds AS (

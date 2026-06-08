@@ -1,8 +1,8 @@
-CREATE TABLE gridpulse_gold.clima_diario_area
+﻿CREATE TABLE gridpulse_gold.clima_diario_area
 WITH (
     format = 'PARQUET',
     parquet_compression = 'SNAPPY',
-    external_location = 's3://gridpulse-brasil-luan-dev/gold/weather/clima_diario_area/',
+    external_location = 's3://{{S3_BUCKET}}/gold/weather/clima_diario_area/',
     partitioned_by = ARRAY['ano', 'mes']
 ) AS
 WITH base AS (
